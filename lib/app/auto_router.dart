@@ -1,8 +1,8 @@
 import 'package:auto_route/auto_route.dart';
-import 'package:hims/ui/screens/pick_home_page.dart';
-import '../ui/screens/home_page.dart';
-import '../ui/screens/login_page.dart';
-import '../ui/screens/splash_page.dart';
+import 'package:hims/features/pick-create-home/presentation/pages/pick_home_page.dart';
+import 'package:hims/features/splash_screen/presentation/screen/splash_screen.dart';
+import '../features/home/presentation/pages/home_page.dart';
+import '../features/auth/presentation/pages/login_page.dart';
 
 part 'auto_router.gr.dart';
 

@@ -1,7 +1,6 @@
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:hims/app/auto_router.dart';
-import 'package:hims/core/constans/colors.dart';
 
 @RoutePage()
 class PickHomePage extends StatelessWidget {

@@ -1,7 +1,7 @@
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../../app/auto_router.dart';
+import '../../../../app/auto_router.dart';
 
 @RoutePage()
 class HomeScreen extends StatelessWidget {
