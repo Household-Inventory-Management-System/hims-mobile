@@ -1,25 +1,77 @@
-import 'package:firebase_database/firebase_database.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:hims/core/models/home_model.dart';
+import 'package:hims/core/services/api_response.dart';
+import 'package:uuid/uuid.dart';
 
 class FirebaseDataService {
-  final DatabaseReference _dbRef = FirebaseDatabase.instance.ref();
+  static final FirebaseDataService _singleton = FirebaseDataService._internal();
+  final uuid = Uuid();
 
-  Future<void> saveUserData(String userId, Map<String, dynamic> data) async {
-    await _dbRef.child('users/$userId').set(data);
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+
+  FirebaseDataService._internal();
+
+  factory FirebaseDataService() {
+    return _singleton;
   }
 
-  Future<Map<String, dynamic>?> getUserData(String userId) async {
-    final snapshot = await _dbRef.child('users/$userId').get();
-    if (snapshot.exists) {
-      return Map<String, dynamic>.from(snapshot.value as Map);
+  Future<ApiResponse<List<Map<String, dynamic>>>> getHomes({
+    required String userId,
+  }) async {
+    try {
+      final snapshot =
+          await _firestore
+              .collection("homes")
+              .where("memberIds", arrayContains: userId)
+              .get();
+
+      if (snapshot.docs.isEmpty) {
+        return ApiResponse(data: [], statusCode: 200);
+      }
+
+      // Преобразуем в список строк (например, по полю name)
+      final homes = snapshot.docs.map((doc) => doc.data()).toList();
+
+      return ApiResponse(data: homes, statusCode: 200);
+    } on FirebaseException catch (e) {
+      return ApiResponse(
+        data: null,
+        statusCode: 500,
+        error: e.message ?? "Firestore error",
+      );
+    } catch (e) {
+      return ApiResponse(data: null, statusCode: 500, error: e.toString());
     }
-    return null;
   }
 
-  Future<void> updateUserData(String userId, Map<String, dynamic> data) async {
-    await _dbRef.child('users/$userId').update(data);
-  }
+  Future<ApiResponse<String>> addHome({
+    required String name,
+    required String userId,
+  }) async {
+    try {
+      final newHome = Home(
+        id: uuid.v4(),
+        name: name,
+        ownerId: userId,
+        memberIds: [userId],
+        createdAt: DateTime.now(),
+      );
+      print(newHome.toFirestore());
 
-  Future<void> deleteUserData(String userId) async {
-    await _dbRef.child('users/$userId').remove();
+      await _firestore
+          .collection("homes")
+          .doc(newHome.id) // используем твой uuid как id документа
+          .set(newHome.toFirestore());
+
+      return ApiResponse(data: newHome.id, statusCode: 201);
+    } on FirebaseException catch (e) {
+      return ApiResponse(
+        data: null,
+        statusCode: 500,
+        error: e.message ?? "Firestore error",
+      );
+    } catch (e) {
+      return ApiResponse(data: null, statusCode: 500, error: e.toString());
+    }
   }
 }

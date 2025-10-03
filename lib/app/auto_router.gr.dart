@@ -59,6 +59,22 @@ class PickHomeRoute extends PageRouteInfo<void> {
 }
 
 /// generated route for
+/// [RegistrationPage]
+class RegistrationRoute extends PageRouteInfo<void> {
+  const RegistrationRoute({List<PageRouteInfo>? children})
+    : super(RegistrationRoute.name, initialChildren: children);
+
+  static const String name = 'RegistrationRoute';
+
+  static PageInfo page = PageInfo(
+    name,
+    builder: (data) {
+      return const RegistrationPage();
+    },
+  );
+}
+
+/// generated route for
 /// [SplashScreen]
 class SplashRoute extends PageRouteInfo<void> {
   const SplashRoute({List<PageRouteInfo>? children})

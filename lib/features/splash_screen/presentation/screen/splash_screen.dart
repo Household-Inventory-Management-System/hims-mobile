@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:auto_route/auto_route.dart';
-import '../bloc/splash_screen_cubit.dart';
+import '../bloc/splash_screen_bloc.dart';
 import '../../../../app/auto_router.dart';
 
 @RoutePage()
@@ -16,30 +16,23 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   void initState() {
     super.initState();
-    // Запускаем инициализацию приложения
-    context.read<SplashScreenCubit>().initializeApp();
+    // Запускаем инициализацию приложения через событие
+    context.read<SplashBloc>().add(const SplashInitializeApp());
   }
 
   @override
   Widget build(BuildContext context) {
-    return BlocListener<SplashScreenCubit, SplashScreenState>(
+    return BlocListener<SplashBloc, SplashState>(
       listener: (context, state) {
         // Навигация в зависимости от состояния
-        switch (state) {
-          case SplashScreenState.goToLogin:
-            context.router.replace(const LoginRoute());
-            break;
-          case SplashScreenState.goToHomePicker:
-            context.router.replace(const PickHomeRoute());
-            break;
-          case SplashScreenState.goToHome:
-            context.router.replace(const HomeRoute());
-            break;
-          case SplashScreenState.loading:
-          case SplashScreenState.error:
-            // Остаемся на splash screen
-            break;
+        if (state is SplashNavigateToLogin) {
+          context.router.replace(const LoginRoute());
+        } else if (state is SplashNavigateToHomePicker) {
+          context.router.replace(const PickHomeRoute());
+        } else if (state is SplashNavigateToHome) {
+          context.router.replace(const HomeRoute());
         }
+        // SplashInitial, SplashLoading, SplashError остаются на splash screen
       },
       child: Scaffold(
         backgroundColor: Colors.blue[300],
@@ -50,20 +43,15 @@ class _SplashScreenState extends State<SplashScreen> {
               borderRadius: BorderRadius.circular(16),
             ),
             padding: const EdgeInsets.all(32.0),
-            child: BlocBuilder<SplashScreenCubit, SplashScreenState>(
+            child: BlocBuilder<SplashBloc, SplashState>(
               builder: (context, state) {
-                switch (state) {
-                  case SplashScreenState.loading:
-                    return _buildLoadingWidget();
-
-                  case SplashScreenState.error:
-                    return _buildErrorWidget(context);
-
-                  case SplashScreenState.goToLogin:
-                  case SplashScreenState.goToHomePicker:
-                  case SplashScreenState.goToHome:
-                    // Эти состояния обрабатываются в BlocListener
-                    return _buildLoadingWidget();
+                if (state is SplashInitial || state is SplashLoading) {
+                  return _buildLoadingWidget();
+                } else if (state is SplashError) {
+                  return _buildErrorWidget(context, state.message);
+                } else {
+                  // Состояния навигации обрабатываются в BlocListener
+                  return _buildLoadingWidget();
                 }
               },
             ),
@@ -115,9 +103,7 @@ class _SplashScreenState extends State<SplashScreen> {
   }
 
   /// Виджет ошибки с возможностью повтора
-  Widget _buildErrorWidget(BuildContext context) {
-    final cubit = context.read<SplashScreenCubit>();
-
+  Widget _buildErrorWidget(BuildContext context, String errorMessage) {
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       mainAxisSize: MainAxisSize.min,
@@ -134,13 +120,16 @@ class _SplashScreenState extends State<SplashScreen> {
         ),
         const SizedBox(height: 12),
         Text(
-          cubit.errorMessage,
+          errorMessage,
           style: const TextStyle(fontSize: 14, color: Colors.blueGrey),
           textAlign: TextAlign.center,
         ),
         const SizedBox(height: 24),
         ElevatedButton.icon(
-          onPressed: () => cubit.retry(),
+          onPressed: () {
+            // Отправляем событие повторной инициализации
+            context.read<SplashBloc>().add(const SplashRetryInitialization());
+          },
           icon: const Icon(Icons.refresh),
           label: const Text('Повторить'),
           style: ElevatedButton.styleFrom(
@@ -154,7 +143,10 @@ class _SplashScreenState extends State<SplashScreen> {
         ),
         const SizedBox(height: 12),
         TextButton(
-          onPressed: () => cubit.forceGoToLogin(),
+          onPressed: () {
+            // Отправляем событие принудительного перехода на логин
+            context.read<SplashBloc>().add(const SplashForceGoToLogin());
+          },
           child: const Text(
             'Перейти к авторизации',
             style: TextStyle(color: Colors.blueAccent),
